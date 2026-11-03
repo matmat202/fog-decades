@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Is the Bay's summer fog disappearing?</title>
+<meta name="description" content="Every summer day at SFO and Oakland since 1948, read from NOAA's hourly airport observations.">
+<style>
+  :root { --bg:#f7f6f3; --fg:#1c1c1c; --muted:#5b5b5b; --line:#d9d6cf; --accent:#2a5d8f; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#16181b; --fg:#ececec; --muted:#a9a9a9; --line:#33363b; --accent:#8db8e6; }
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width:980px; margin:0 auto; padding:24px 16px 48px; }
+  h1 { font-size:1.7rem; line-height:1.2; margin:0 0 8px; }
+  .lede { font-size:1.1rem; margin:0 0 20px; max-width:62ch; }
+  .tabs { display:flex; gap:8px; margin:0 0 12px; flex-wrap:wrap; }
+  .tabs button { font:inherit; padding:8px 14px; min-height:44px; border:1px solid var(--line); background:transparent; color:var(--fg); border-radius:8px; cursor:pointer; }
+  .tabs button[aria-pressed="true"] { border-color:var(--accent); color:var(--accent); font-weight:600; }
+  .stats { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; margin:0 0 16px; }
+  .stat { border:1px solid var(--line); border-radius:8px; padding:10px 12px; }
+  .stat b { display:block; font-size:1.5rem; }
+  .stat span { color:var(--muted); font-size:.9rem; }
+  figure { margin:0 0 20px; }
+  canvas { width:100%; display:block; }
+  figcaption, .note { color:var(--muted); font-size:.9rem; max-width:70ch; }
+  .legend { display:flex; align-items:center; gap:8px; color:var(--muted); font-size:.85rem; margin:6px 0; }
+  .legend i { display:inline-block; width:140px; height:10px; border-radius:2px; }
+  h2 { font-size:1.15rem; margin:28px 0 6px; }
+  a { color:var(--accent); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Is the Bay's summer fog disappearing?</h1>
+  <p class="lede" id="answer">Loading NOAA's airport record…</p>
+
+  <div class="tabs" role="group" aria-label="Airport">
+    <button type="button" data-stn="sfo" aria-pressed="true">SFO</button>
+    <button type="button" data-stn="oak" aria-pressed="false">Oakland</button>
+  </div>
+
+  <div class="stats" id="stats"></div>
+
+  <figure>
+    <canvas id="grid" role="img" aria-label="One row per summer, one cell per day, darker grey for more low-cloud readings"></canvas>
+    <div class="legend">clear <i id="ramp"></i> low cloud all day</div>
+    <figcaption>One row per summer (June to August), one cell per day. A cell's shade is how many of the
+      day's eight 3-hourly readings had the cloud ceiling at or below <span class="lowm">400</span> m. The bar at the right is
+      that summer's share of all readings. Blank cells are days with too few readings.</figcaption>
+  </figure>
+
+  <h2>How this was measured</h2>
+  <p class="note">Source: <span id="source"></span>. Each airport's hourly reports are read on the eight
+    synoptic hours only (00, 03 … 21 UTC), because 1969–1972 survive only at 3-hourly resolution and an
+    hourly year would otherwise get three times the chances to catch fog. NOAA's older database stops
+    in August 2025, so 2025 and 2026 come from its successor, GHCNh, which gives the same answer as the
+    older one to a tenth of a point on the summers both cover. "Low cloud" is a ceiling at or below
+    <span class="lowm">400</span> m (about 1,300 ft), the marine layer the Bay calls fog;
+    fog measured by visibility is not counted. SFO's record switches from the old SAO format to
+    METAR reports in July <span id="asos-year"></span>; the
+    <span id="asos-span"></span> summers either side of it differ by <span id="asos-step"></span> points.</p>
+  <p class="note">What this cannot tell you: whether the drop between the 1950s and the 1960s is weather or a
+    change in how observers reported ceilings. Both airports show it, which rules out one station's move but
+    not a nationwide practice change. Built <span id="built"></span>.</p>
+</main>
+<script src="data/fog-data.js"></script>
+<script src="fog.js"></script>
+</body>
+</html>
