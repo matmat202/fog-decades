@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Do the old weather sayings work in San Francisco?</title>
+<meta name="description" content="Seven weather sayings, from 'rain before seven' to earthquake weather, tested against every hourly observation at SFO since 1949.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://matmat202.github.io/fog-decades/lore/">
+<meta property="og:title" content="Do the old weather sayings work in San Francisco?">
+<meta property="og:description" content="Seven weather sayings tested against every hourly observation at SFO since 1949, including earthquake weather.">
+<style>
+  :root { --bg:#f7f6f3; --fg:#1c1c1c; --muted:#5b5b5b; --line:#d9d6cf; --accent:#2a5d8f;
+          --holds:#1f6b3a; --backwards:#9a3412; --chance:#5b5b5b; --bar:#c9c4ba; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#16181b; --fg:#ececec; --muted:#a9a9a9; --line:#33363b; --accent:#8db8e6;
+            --holds:#6fcf8f; --backwards:#f4a06b; --chance:#a9a9a9; --bar:#4a4e55; }
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width:760px; margin:0 auto; padding:24px 16px 48px; }
+  h1 { font-size:1.7rem; line-height:1.2; margin:0 0 8px; }
+  .lede { font-size:1.1rem; margin:0 0 20px; max-width:62ch; }
+  .card { border:1px solid var(--line); border-radius:8px; padding:14px 14px 12px; margin:0 0 14px; }
+  .card h2 { font-size:1.15rem; margin:0 0 4px; font-style:italic; font-weight:600; }
+  .verdict { font-weight:700; margin:0 0 6px; }
+  .holds .verdict { color:var(--holds); } .backwards .verdict { color:var(--backwards); } .chance .verdict { color:var(--chance); }
+  .rows { display:grid; grid-template-columns:minmax(0, 1fr) 4.5em; gap:4px 10px; align-items:center; font-size:.92rem; margin:8px 0; }
+  .track { grid-column:1 / -1; height:10px; background:transparent; border:1px solid var(--line); border-radius:2px; }
+  .track i { display:block; height:100%; background:var(--bar); }
+  .track.sign i { background:var(--accent); }
+  .num { text-align:right; font-variant-numeric:tabular-nums; font-weight:600; }
+  .test, .note { color:var(--muted); font-size:.9rem; max-width:70ch; margin:6px 0 0; }
+  .tag { display:inline-block; font-size:.75rem; border:1px solid var(--line); border-radius:4px; padding:0 6px; margin-left:6px; color:var(--muted); font-style:normal; font-weight:400; vertical-align:middle; }
+  h3 { font-size:1.05rem; margin:28px 0 6px; }
+  a { color:var(--accent); }
+</style>
+</head>
+<body>
+<main>
+  <p class="note"><a href="../">← Is the Bay's summer fog disappearing?</a></p>
+  <h1>Do the old weather sayings work in San Francisco?</h1>
+  <p class="lede" id="answer">Loading NOAA's airport record…</p>
+  <div id="cards"></div>
+
+  <h3>How this was scored</h3>
+  <p class="note">Every saying is a sign and an outcome. Each card compares how often the outcome
+    happened on days with the sign against days without it, in the same season, at San Francisco
+    International Airport. A saying <b>holds</b> when the gap stays above zero in 95% of
+    <span id="draws"></span> re-runs that each draw whole years at random, which allows for runs of wet
+    and dry years. It runs <b>backwards</b> when the gap stays below zero, and is <b>no better than chance</b>
+    otherwise. "Rain" is any measurable amount in an hour; traces count as dry.</p>
+  <p class="note">The barometer card is the check on the method: falling pressure ahead of a storm is
+    physics, so a method that could not see it could not see anything. Dew and clear skies are judged
+    from the 6 am temperature, dew point, wind and cloud, not from the grass itself. Earthquakes are
+    USGS's catalogue of magnitude 4 and up within 100 km of the airport (<span id="nq"></span> days).</p>
+  <p class="note">Source: NOAA's Integrated Surface Database, hourly reports from SFO, <span id="years"></span>
+    (<span id="skipped"></span> left out as incomplete), and the USGS earthquake catalogue. One station is
+    not the Bay: the airport is sunnier than the city and drier than the hills. Built <span id="built"></span>.</p>
+</main>
+<script src="data/lore-data.js"></script>
+<script src="lore.js"></script>
+</body>
+</html>
