@@ -27,7 +27,7 @@
   .tabs { display:flex; gap:8px; margin:0 0 12px; flex-wrap:wrap; }
   .tabs button { font:inherit; padding:8px 14px; min-height:44px; border:1px solid var(--line); background:transparent; color:var(--fg); border-radius:8px; cursor:pointer; }
   .tabs button[aria-pressed="true"] { border-color:var(--accent); color:var(--accent); font-weight:600; }
-  .stats { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; margin:0 0 16px; }
+  .stats { display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:12px; margin:0 0 16px; }
   .stat { border:1px solid var(--line); border-radius:8px; padding:10px 12px; }
   .stat b { display:block; font-size:1.5rem; }
   .stat span { color:var(--muted); font-size:.9rem; }
@@ -38,6 +38,12 @@
   .legend i { display:inline-block; width:140px; height:10px; border-radius:2px; }
   h2 { font-size:1.15rem; margin:28px 0 6px; }
   a { color:var(--accent); }
+  canvas { cursor:pointer; }
+  .pick { display:flex; align-items:center; gap:8px; margin:10px 0 4px; }
+  .pick button, .pick select { font:inherit; min-height:44px; padding:6px 12px; border:1px solid var(--line); background:transparent; color:var(--fg); border-radius:8px; }
+  .pick button { min-width:44px; cursor:pointer; }
+  .pick button:disabled { opacity:.4; cursor:default; }
+  #readout { margin:0 0 8px; max-width:62ch; min-height:3em; }
 </style>
 </head>
 <body>
@@ -54,10 +60,17 @@
 
   <figure>
     <canvas id="grid" role="img" aria-label="One row per summer, one cell per day, darker grey for more low-cloud readings"></canvas>
+    <div class="pick">
+      <button type="button" id="prev" aria-label="Earlier summer">&lsaquo;</button>
+      <select id="year" aria-label="Summer"></select>
+      <button type="button" id="next" aria-label="Later summer">&rsaquo;</button>
+    </div>
+    <p id="readout" aria-live="polite"></p>
     <div class="legend">clear <i id="ramp"></i> low cloud all day</div>
     <figcaption>One row per summer (June to August), one cell per day. A cell's shade is how many of the
       day's eight 3-hourly readings had the cloud ceiling at or below <span class="lowm">400</span> m. The bar at the right is
-      that summer's share of all readings. Blank cells are days with too few readings.</figcaption>
+      that summer's share of all readings. Blank cells are days with too few readings; a blank row is a summer with no record.
+      Tap a row, or pick a year, to read that summer and day.</figcaption>
   </figure>
 
   <p class="note">Same airport, older questions: <a href="lore/">do the old weather sayings work in San Francisco?</a></p>

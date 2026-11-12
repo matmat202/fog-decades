@@ -26,6 +26,29 @@ const FOG = {
       `(${s.slope_pp_per_decade >= 0 ? "+" : ""}${f(s.slope_pp_per_decade)} points a decade), ` +
       `and Oakland has ${o.slope_pp_per_decade >= 0 ? "gained" : "lost"} ${f(Math.abs(o.slope_pp_per_decade))} points a decade.`;
   },
+  // one summer in words: its share, where it stands among the others, and one day if picked
+  readout(data, key, year, day) {
+    const st = data.stations[key], y = st.years.find(r => r.year === year);
+    if (!y) return "";
+    const clearer = st.years.filter(r => r.share < y.share).length;
+    const name = key === "sfo" ? "SFO" : "Oakland";
+    let s = `Summer ${y.year} at ${name}: ${y.share.toFixed(1)}% of readings had low cloud, ` +
+      `foggier than ${clearer} of the ${st.years.length - 1} other summers on record.`;
+    if (day != null && data.days[day]) {
+      const [m, d] = data.days[day].split("-").map(Number);
+      const when = `${["Jun", "Jul", "Aug"][m - 6]} ${d}`, v = y.days[day];
+      s += v < 0 ? ` ${when} has too few readings to say.`
+        : ` ${when}: low cloud in about ${v} of 8 readings.`;
+    }
+    return s;
+  },
+  // which summer (row) and day (column) a point on the canvas falls on; day is null off the grid
+  hit(L, x, y) {
+    const r = Math.floor((y - L.top) / L.rh);
+    if (r < 0 || r >= L.rows) return null;
+    const c = Math.floor((x - L.left) / L.cw);
+    return { row: r, day: c >= 0 && c < L.ndays ? c : null };
+  },
 };
 
 function stats(data, key) {
@@ -40,12 +63,14 @@ function stats(data, key) {
   ];
 }
 
-function draw(canvas, data, key) {
+function draw(canvas, data, key, pick) {
   const st = data.stations[key];
   const dark = matchMedia("(prefers-color-scheme: dark)").matches;
   const css = getComputedStyle(document.documentElement);
   const fg = css.getPropertyValue("--muted").trim(), line = css.getPropertyValue("--line").trim();
-  const W = canvas.clientWidth, rows = st.years.length, ndays = data.days.length;
+  // one row per calendar year, so a summer with no record (Oakland 2000-03) is a blank row, not a closed gap
+  const first = st.years[0].year, rows = st.years[st.years.length - 1].year - first + 1;
+  const W = canvas.clientWidth, ndays = data.days.length;
   const left = 44, barW = Math.min(120, W * 0.18), gap = 8, top = 18;
   const cw = (W - left - barW - gap) / ndays, rh = Math.max(4, Math.min(8, cw * 1.1));
   const H = top + rows * rh + 4;
@@ -55,8 +80,8 @@ function draw(canvas, data, key) {
   g.font = "11px system-ui, sans-serif"; g.fillStyle = fg; g.textBaseline = "middle";
   ["Jun", "Jul", "Aug"].forEach((m, i) => g.fillText(m, left + data.days.findIndex(d => d.startsWith("0" + (6 + i))) * cw, 8));
   const maxShare = Math.max(...Object.values(data.stations).flatMap(s => s.years.map(y => y.share)));
-  st.years.forEach((y, r) => {
-    const yy = top + r * rh;
+  st.years.forEach(y => {
+    const yy = top + (y.year - first) * rh;
     if (y.year % 10 === 0) {
       g.fillStyle = fg; g.fillText(String(y.year), 0, yy + rh / 2);
       g.fillStyle = line; g.fillRect(left, yy, W - left, 0.5);
@@ -69,6 +94,13 @@ function draw(canvas, data, key) {
     g.fillStyle = css.getPropertyValue("--accent").trim();
     g.fillRect(left + ndays * cw + gap, yy + 0.5, barW * y.share / maxShare, rh - 1);
   });
+  const r = pick ? pick.year - first : -1;
+  if (r >= 0 && r < rows) {
+    g.strokeStyle = css.getPropertyValue("--fg").trim(); g.lineWidth = 1.5;
+    g.strokeRect(left - 2, top + r * rh - 1.5, W - left + 1, rh + 3);
+    if (pick.day != null) g.strokeRect(left + pick.day * cw - 1.5, top + r * rh - 3, cw + 3, rh + 6);
+  }
+  return { left, top, cw, rh, rows, ndays, first };
 }
 
 async function main() {
@@ -85,13 +117,31 @@ async function main() {
   const dark = matchMedia("(prefers-color-scheme: dark)").matches;
   document.getElementById("ramp").style.background =
     `linear-gradient(90deg, ${FOG.shade(0, dark)}, ${FOG.shade(8, dark)})`;
-  let key = "sfo";
+  let key = "sfo", layout = null;
+  const sel = document.getElementById("year");
+  const years = () => data.stations[key].years.map(y => y.year);
+  const pick = { year: years()[years().length - 1], day: null };
   const show = () => {
+    if (!years().includes(pick.year)) { pick.year = years()[years().length - 1]; pick.day = null; }
+    sel.innerHTML = years().slice().reverse().map(y => `<option${y === pick.year ? " selected" : ""}>${y}</option>`).join("");
+    document.getElementById("readout").textContent = FOG.readout(data, key, pick.year, pick.day);
+    const i = years().indexOf(pick.year);
+    document.getElementById("prev").disabled = i <= 0;
+    document.getElementById("next").disabled = i >= years().length - 1;
     document.getElementById("stats").innerHTML = stats(data, key)
       .map(([b, s]) => `<div class="stat"><b>${b}</b><span>${s}</span></div>`).join("");
     document.querySelectorAll(".tabs button").forEach(b => b.setAttribute("aria-pressed", b.dataset.stn === key));
-    draw(canvas, data, key);
+    layout = draw(canvas, data, key, pick);
   };
+  const move = d => { const ys = years(), i = ys.indexOf(pick.year) + d; if (ys[i]) { pick.year = ys[i]; show(); } };
+  document.getElementById("prev").addEventListener("click", () => move(-1));
+  document.getElementById("next").addEventListener("click", () => move(1));
+  sel.addEventListener("change", () => { pick.year = Number(sel.value); show(); });
+  canvas.addEventListener("click", e => {
+    const b = canvas.getBoundingClientRect(), h = layout && FOG.hit(layout, e.clientX - b.left, e.clientY - b.top);
+    if (!h || !years().includes(layout.first + h.row)) return;
+    pick.year = layout.first + h.row; pick.day = h.day; show();
+  });
   document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click", () => { key = b.dataset.stn; show(); }));
   addEventListener("resize", show);
   show();
