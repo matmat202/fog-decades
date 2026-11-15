@@ -68,7 +68,7 @@
     <p id="readout" aria-live="polite"></p>
     <div class="legend">clear <i id="ramp"></i> low cloud all day</div>
     <figcaption>One row per summer (June to August), one cell per day. A cell's shade is how many of the
-      day's eight 3-hourly readings had the cloud ceiling at or below <span class="lowm">400</span> m. The bar at the right is
+      day's eight 3-hourly readings (2am to 11pm) had the cloud ceiling at or below <span class="lowm">400</span> m. The bar at the right is
       that summer's share of all readings, and the dark line across the bars is each decade's average. Blank cells are days with too few readings; a blank row is a summer with no record.
       Tap a row, or pick a year, to read that summer and day.</figcaption>
   </figure>
@@ -77,7 +77,8 @@
 
   <h2>How this was measured</h2>
   <p class="note">Source: <span id="source"></span>. Each airport's hourly reports are read on the eight
-    synoptic hours only (00, 03 … 21 UTC), because 1969–1972 survive only at 3-hourly resolution and an
+    synoptic hours only (00, 03 … 21 UTC, which is 2am, 5am … 11pm on a summer day in the Bay), and each reading is
+    filed under its Pacific date, so a day is one calendar day from the small hours to the evening. Only those hours, because 1969–1972 survive only at 3-hourly resolution and an
     hourly year would otherwise get three times the chances to catch fog. NOAA's older database stops
     in August 2025, so 2025 and 2026 come from its successor, GHCNh, which gives the same answer as the
     older one to a tenth of a point on the summers both cover. "Low cloud" is a ceiling at or below
