@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Oakland gets the fog · Fog Decades, a story</title>
+<meta name="description" content="A story from Fog Decades: in 74 of the 75 summers both airports recorded since 1948, Oakland logged more low cloud than SFO; the exception was 1976. On summer days with low cloud at SFO, Oakland had it too 94% of the time, and SFO alone had it on only 3% of 6,900 days. Both airports are foggiest at the turn of July into August, and least in June.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="plot" aria-hidden="true"></div>
+<p id="err" role="alert"></p>
+<main>
+
+<section class="step" data-step="summers"><div>
+  <p class="kicker">Fog Decades · a story</p>
+  <h1>Oakland gets the fog</h1>
+  <p><a href="../">Fog Decades</a> asks whether the Bay’s summer fog is disappearing, one
+  airport at a time. Put the two airports side by side instead.</p>
+  <p>Both kept a record in <b data-fact="summers"></b> summers between <b data-fact="first"></b>
+  and <b data-fact="last"></b>. In <b data-fact="oak_more"></b> of them, Oakland logged more
+  low cloud than San Francisco’s airport across the water. <span class="w">The one exception
+  was <b data-fact="except"></b></span>, the black dot.</p>
+  <p class="small">Scroll ↓</p>
+</div></section>
+
+<section class="step" data-step="pairs"><div>
+  <p class="kicker">Chapter 1 · Day by day</p>
+  <h2>SFO almost never has it alone</h2>
+  <p>Take the <b data-fact="days"></b> summer days both airports recorded and ask of each
+  whether either saw low cloud at all. On the days SFO did, Oakland did too
+  <b data-fact="oak_given_sfo"></b> of the time.</p>
+  <p>Low cloud at SFO and not Oakland, the red bar, happened on <b data-fact="sfo_only"></b>
+  days, <b data-fact="sfo_only_pct"></b>. The other way round, Oakland alone, was more than
+  four times as common: <b data-fact="oak_only"></b> days, <b data-fact="oak_only_pct"></b>.</p>
+</div></section>
+
+<section class="step" data-step="weeks"><div>
+  <p class="kicker">Chapter 2 · Week by week</p>
+  <h2>Midsummer, not June</h2>
+  <p>Both airports keep the same calendar. Low cloud is rarest in early June and builds
+  through July. Oakland’s foggiest week starts <b data-fact="peak_oak"></b> and SFO’s
+  <b data-fact="peak_sfo"></b>: the turn of July into August.</p>
+  <p>June is the least foggy of the three summer months at both airports, in the first half
+  of the record and in the second.</p>
+</div></section>
+
+<section class="step" data-step="summers"><div>
+  <p class="kicker">Epilogue · Reading Fog Decades</p>
+  <h2>Switch to the Oakland tab</h2>
+  <p>On <a href="../">Fog Decades</a>, look at SFO’s grid of summers, then press
+  Oakland. The grid gets darker, almost every year, and darkest in early August.</p>
+  <p class="small">Data: the NOAA hourly airport observations Fog Decades ships. “Low
+  cloud” is a reading with the cloud ceiling at or below <b data-fact="low_m"></b>, on the
+  eight 3-hourly readings of a day, as on the main page; a day has low cloud if any of the
+  eight did. Oakland has no record for 2000–03, so those summers are left out of every
+  comparison. Two airports are not the Bay, and two instruments are not one: some of the
+  gap could be how each airport reports a ceiling. This says where the low cloud was
+  recorded, not why. The program is
+  <a href="https://github.com/matmat202/fog-decades/blob/main/story/build_story.py">in the repository</a>.</p>
+</div></section>
+
+</main>
+<script type="module" src="story.js"></script>
+</body>
+</html>
