@@ -44,6 +44,15 @@
   .pick button { min-width:44px; cursor:pointer; }
   .pick button:disabled { opacity:.4; cursor:default; }
   #readout { margin:0 0 8px; max-width:62ch; min-height:3em; }
+  h3 { font-size:1rem; margin:18px 0 4px; }
+  #when { margin:0 0 8px; max-width:62ch; }
+  .hours { display:grid; grid-template-columns:repeat(8, 1fr); gap:6px; max-width:560px; }
+  .hr { display:flex; flex-direction:column; align-items:center; font-size:.8rem; color:var(--muted); min-width:0; }
+  .hr .col { position:relative; width:100%; height:90px; border-bottom:1px solid var(--line); }
+  .hr .bar { position:absolute; bottom:0; left:15%; width:70%; background:var(--accent); border-radius:2px 2px 0 0; }
+  .hr .avg { position:absolute; left:5%; width:90%; height:2px; margin-bottom:-1px; background:var(--fg); }
+  .hr .v { color:var(--fg); }
+  .hr .t { white-space:nowrap; }
 </style>
 </head>
 <body>
@@ -69,8 +78,12 @@
     <div class="legend">clear <i id="ramp"></i> low cloud all day</div>
     <figcaption>One row per summer (June to August), one cell per day. A cell's shade is how many of the
       day's eight 3-hourly readings (2am to 11pm) had the cloud ceiling at or below <span class="lowm">400</span> m. The bar at the right is
-      that summer's share of all readings, and the dark line across the bars is each decade's average. Blank cells are days with too few readings; a blank row is a summer with no record.
+      that summer's share of all readings, and the line across the bars is each decade's average. Blank cells are days with too few readings; a blank row is a summer with no record.
       Tap a row, or pick a year, to read that summer and day.</figcaption>
+    <h3>What time of day</h3>
+    <p id="when" aria-live="polite"></p>
+    <div class="hours" id="hours" role="list" aria-label="Share of readings with low cloud at each time of day, picked summer"></div>
+    <p class="note">The bar is the picked summer's share of readings with low cloud at that time; the line across it is the average summer since <span id="hours-from"></span>.</p>
   </figure>
 
   <p class="note">Same airport, older questions: <a href="lore/">do the old weather sayings work in San Francisco?</a></p>

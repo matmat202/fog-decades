@@ -51,6 +51,26 @@ const FOG = {
     }
     return s;
   },
+  // each time of day's share of low readings, averaged over the summers since `from` (null where none read it)
+  hourMeans(st, from) {
+    const ys = st.years.filter(r => r.year >= from);
+    return ys[0].hours.map((_, i) => {
+      const xs = ys.map(r => r.hours[i]).filter(v => v != null);
+      return xs.length ? FOG.mean(xs) : null;
+    });
+  },
+  // one summer's day in words: the time the low cloud peaked, the time it was least, against the usual peak
+  when(data, key, year) {
+    const st = data.stations[key], y = st.years.find(r => r.year === year);
+    if (!y) return "";
+    const at = xs => xs.map((v, i) => [v, i]).filter(([v]) => v != null);
+    const top = xs => at(xs).reduce((a, b) => (b[0] > a[0] ? b : a));
+    const [hi, h] = top(y.hours), [lo, l] = at(y.hours).reduce((a, b) => (b[0] < a[0] ? b : a));
+    const [mhi, mh] = top(FOG.hourMeans(st, data.trend_from));
+    return `Summer ${y.year} at ${key === "sfo" ? "SFO" : "Oakland"}: low cloud peaked at ${data.hours[h]} ` +
+      `(${hi.toFixed(1)}% of readings) and was least at ${data.hours[l]} (${lo.toFixed(1)}%). ` +
+      `The average summer since ${data.trend_from} peaks at ${data.hours[mh]}, with ${mhi.toFixed(1)}%.`;
+  },
   // which summer (row) and day (column) a point on the canvas falls on; day is null off the grid
   hit(L, x, y) {
     const r = Math.floor((y - L.top) / L.rh);
@@ -70,6 +90,20 @@ function stats(data, key) {
     [last.share.toFixed(1) + "%", `${last.decade}s (${last.years} summers so far)`],
     [sign(st.slope_pp_per_decade), `points a decade since ${data.trend_from}`],
   ];
+}
+
+// the picked summer's 8 times of day as bars, each with a tick at the average summer since trend_from
+function hours(el, data, key, year) {
+  const st = data.stations[key], y = st.years.find(r => r.year === year), mean = FOG.hourMeans(st, data.trend_from);
+  const top = Math.max(10, ...y.hours.filter(v => v != null), ...mean.filter(v => v != null));
+  el.innerHTML = data.hours.map((t, i) => {
+    const v = y.hours[i], m = mean[i];
+    return `<div class="hr" role="listitem" aria-label="${t}: ${v == null ? "no readings" : v.toFixed(1) + "% low cloud"}">` +
+      `<span class="v">${v == null ? "–" : Math.round(v) + "%"}</span>` +
+      `<span class="col"><i class="bar" style="height:${v == null ? 0 : (100 * v / top).toFixed(1)}%"></i>` +
+      (m == null ? "" : `<i class="avg" style="bottom:${(100 * m / top).toFixed(1)}%"></i>`) +
+      `</span><span class="t">${t}</span></div>`;
+  }).join("");
 }
 
 function draw(canvas, data, key, pick) {
@@ -124,6 +158,7 @@ async function main() {
   document.getElementById("answer").textContent = FOG.answer(data);
   document.getElementById("source").textContent = data.source;
   document.getElementById("built").textContent = data.generated;
+  document.getElementById("hours-from").textContent = data.trend_from;
   document.getElementById("asos-year").textContent = data.asos_year;
   document.getElementById("asos-span").textContent = data.asos_span;
   const step = data.stations.sfo.asos_step_pp;
@@ -140,6 +175,8 @@ async function main() {
     if (!years().includes(pick.year)) { pick.year = years()[years().length - 1]; pick.day = null; }
     sel.innerHTML = years().slice().reverse().map(y => `<option${y === pick.year ? " selected" : ""}>${y}</option>`).join("");
     document.getElementById("readout").textContent = FOG.readout(data, key, pick.year, pick.day);
+    document.getElementById("when").textContent = FOG.when(data, key, pick.year);
+    hours(document.getElementById("hours"), data, key, pick.year);
     const i = years().indexOf(pick.year);
     document.getElementById("prev").disabled = i <= 0;
     document.getElementById("next").disabled = i >= years().length - 1;
@@ -163,4 +200,4 @@ async function main() {
 }
 
 if (typeof window !== "undefined") main();
-else module.exports = { FOG, stats };
+else module.exports = { FOG, stats, hours };
