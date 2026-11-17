@@ -47,6 +47,13 @@
   h3 { font-size:1rem; margin:18px 0 4px; }
   #when { margin:0 0 8px; max-width:62ch; }
   .hours { display:grid; grid-template-columns:repeat(8, 1fr); gap:6px; max-width:560px; }
+  /* Four across on a phone. At 375px eight columns are 36px each, and at Android's largest
+     text setting (every font size x1.5) "11pm" is about 40px and was drawn on top of "8pm" --
+     a fixed-height box that grows its text does not clip, so only projects/text-spacing saw
+     it. 4+4 keeps the day in order and gives each label ~78px. Measured, not guessed: an
+     auto-fit track was tried first and gave 7+1 at a 560px window, which is worse than the
+     eight it replaced. Above this the row is at least 59px a column, which holds 40px. */
+  @media (max-width:560px){ .hours { grid-template-columns:repeat(4, 1fr); } }
   .hr { display:flex; flex-direction:column; align-items:center; font-size:.8rem; color:var(--muted); min-width:0; }
   .hr .col { position:relative; width:100%; height:90px; border-bottom:1px solid var(--line); }
   .hr .bar { position:absolute; bottom:0; left:15%; width:70%; background:var(--accent); border-radius:2px 2px 0 0; }
