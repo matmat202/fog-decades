@@ -51,10 +51,10 @@ const FOG = {
     }
     return s;
   },
-  // each time of day's share of low readings, averaged over the summers since `from` (null where none read it)
-  hourMeans(st, from) {
-    const ys = st.years.filter(r => r.year >= from);
-    return ys[0].hours.map((_, i) => {
+  // each time of day's share of low readings, averaged over the summers from `from` to `to` (null where none read it)
+  hourMeans(st, from, to = Infinity) {
+    const ys = st.years.filter(r => r.year >= from && r.year <= to);
+    return st.years[0].hours.map((_, i) => {
       const xs = ys.map(r => r.hours[i]).filter(v => v != null);
       return xs.length ? FOG.mean(xs) : null;
     });
@@ -70,6 +70,20 @@ const FOG = {
     return `Summer ${y.year} at ${key === "sfo" ? "SFO" : "Oakland"}: low cloud peaked at ${data.hours[h]} ` +
       `(${hi.toFixed(1)}% of readings) and was least at ${data.hours[l]} (${lo.toFixed(1)}%). ` +
       `The average summer since ${data.trend_from} peaks at ${data.hours[mh]}, with ${mhi.toFixed(1)}%.`;
+  },
+  // the 1950s against the summers since trend_from, time by time: where the drop fell
+  then(data, key) {
+    const st = data.stations[key], was = FOG.hourMeans(st, 1950, 1959), now = FOG.hourMeans(st, data.trend_from);
+    const both = was.map((w, i) => [w, now[i], i]).filter(([w, n]) => w != null && n != null);
+    if (!both.length) return "";
+    const f = x => x.toFixed(1), name = key === "sfo" ? "SFO" : "Oakland";
+    const [bw, bn, b] = both.reduce((a, c) => (c[0] - c[1] > a[0] - a[1] ? c : a));
+    const down = both.filter(([w, n]) => n < w).length, up = both.filter(([w, n]) => n > w).map(([, , i]) => data.hours[i]);
+    let s = `Against the 1950s, the average summer at ${name} since ${data.trend_from} has less low cloud at ` +
+      `${down === both.length ? "every one" : down} of the ${both.length} times`;
+    s += up.length ? ` (more at ${up.join(" and ")}).` : ".";
+    s += bw > bn ? ` The biggest drop is at ${data.hours[b]}: ${f(bw)}% of readings then, ${f(bn)}% since.` : "";
+    return s + " Whether that is weather or a change in how ceilings were reported is not settled (below).";
   },
   // which summer (row) and day (column) a point on the canvas falls on; day is null off the grid
   hit(L, x, y) {
@@ -95,13 +109,15 @@ function stats(data, key) {
 // the picked summer's 8 times of day as bars, each with a tick at the average summer since trend_from
 function hours(el, data, key, year) {
   const st = data.stations[key], y = st.years.find(r => r.year === year), mean = FOG.hourMeans(st, data.trend_from);
-  const top = Math.max(10, ...y.hours.filter(v => v != null), ...mean.filter(v => v != null));
+  const was = FOG.hourMeans(st, 1950, 1959);
+  const top = Math.max(10, ...[...y.hours, ...mean, ...was].filter(v => v != null));
   el.innerHTML = data.hours.map((t, i) => {
-    const v = y.hours[i], m = mean[i];
+    const v = y.hours[i], m = mean[i], o = was[i];
     return `<div class="hr" role="listitem" aria-label="${t}: ${v == null ? "no readings" : v.toFixed(1) + "% low cloud"}">` +
       `<span class="v">${v == null ? "–" : Math.round(v) + "%"}</span>` +
       `<span class="col"><i class="bar" style="height:${v == null ? 0 : (100 * v / top).toFixed(1)}%"></i>` +
       (m == null ? "" : `<i class="avg" style="bottom:${(100 * m / top).toFixed(1)}%"></i>`) +
+      (o == null ? "" : `<i class="old" style="bottom:${(100 * o / top).toFixed(1)}%"></i>`) +
       `</span><span class="t">${t}</span></div>`;
   }).join("");
 }
@@ -176,6 +192,7 @@ async function main() {
     sel.innerHTML = years().slice().reverse().map(y => `<option${y === pick.year ? " selected" : ""}>${y}</option>`).join("");
     document.getElementById("readout").textContent = FOG.readout(data, key, pick.year, pick.day);
     document.getElementById("when").textContent = FOG.when(data, key, pick.year);
+    document.getElementById("then").textContent = FOG.then(data, key);
     hours(document.getElementById("hours"), data, key, pick.year);
     const i = years().indexOf(pick.year);
     document.getElementById("prev").disabled = i <= 0;
