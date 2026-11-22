@@ -43,7 +43,9 @@
   .pick button, .pick select { font:inherit; min-height:44px; padding:6px 12px; border:1px solid var(--line); background:transparent; color:var(--fg); border-radius:8px; }
   .pick button { min-width:44px; cursor:pointer; }
   .pick button:disabled { opacity:.4; cursor:default; }
-  #readout { margin:0 0 8px; max-width:62ch; min-height:3em; }
+  #readout { margin:0 0 4px; max-width:62ch; min-height:3em; }
+  .share { margin:0 0 8px; font-size:.9rem; }
+  .share a { display:inline-block; padding:10px 0; }
   h3 { font-size:1rem; margin:18px 0 4px; }
   #when { margin:0 0 8px; max-width:62ch; }
   .hours { display:grid; grid-template-columns:repeat(8, 1fr); gap:6px; max-width:560px; }
@@ -84,6 +86,7 @@
       <button type="button" id="next" aria-label="Later summer">&rsaquo;</button>
     </div>
     <p id="readout" aria-live="polite"></p>
+    <p class="share"><a id="permalink" href="#sfo">Link to this summer</a></p>
     <div class="legend">clear <i id="ramp"></i> low cloud all day</div>
     <figcaption>One row per summer (June to August), one cell per day. A cell's shade is how many of the
       day's eight 3-hourly readings (2am to 11pm) had the cloud ceiling at or below <span class="lowm">400</span> m. The bar at the right is

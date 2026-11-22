@@ -85,6 +85,20 @@ const FOG = {
     s += bw > bn ? ` The biggest drop is at ${data.hours[b]}: ${f(bw)}% of readings then, ${f(bn)}% since.` : "";
     return s + " Whether that is weather or a change in how ceilings were reported is not settled (below).";
   },
+  // the address of a picked airport, summer and day: #sfo-1990-07-15, #oak-2010, or #sfo
+  link(data, key, year, day) {
+    return "#" + key + (year == null ? "" : "-" + year + (day != null && data.days[day] ? "-" + data.days[day] : ""));
+  },
+  // the reverse: null for anything that is not an airport; a summer the airport has no record of, or a day
+  // outside the season, comes back as null so the page falls back to its default rather than a blank readout
+  unlink(data, hash) {
+    const m = /^#?(sfo|oak)(?:-(\d{4})(?:-(\d\d-\d\d))?)?$/i.exec(hash || "");
+    if (!m) return null;
+    const key = m[1].toLowerCase(), year = m[2] ? Number(m[2]) : null;
+    if (year == null || !data.stations[key].years.some(r => r.year === year)) return { key, year: null, day: null };
+    const day = m[3] ? data.days.indexOf(m[3]) : -1;
+    return { key, year, day: day < 0 ? null : day };
+  },
   // which summer (row) and day (column) a point on the canvas falls on; day is null off the grid
   hit(L, x, y) {
     const r = Math.floor((y - L.top) / L.rh);
@@ -187,8 +201,17 @@ async function main() {
   const sel = document.getElementById("year");
   const years = () => data.stations[key].years.map(y => y.year);
   const pick = { year: years()[years().length - 1], day: null };
+  // a shared link (#oak-1990-07-15) opens on its airport, summer and day; a bad one opens the default
+  const open = () => {
+    const h = FOG.unlink(data, location.hash);
+    if (!h) return;
+    key = h.key; pick.year = h.year == null ? years()[years().length - 1] : h.year; pick.day = h.day;
+  };
+  const share = document.getElementById("permalink");
   const show = () => {
     if (!years().includes(pick.year)) { pick.year = years()[years().length - 1]; pick.day = null; }
+    share.href = FOG.link(data, key, pick.year, pick.day);
+    share.textContent = pick.day == null ? "Link to this summer" : "Link to this day";
     sel.innerHTML = years().slice().reverse().map(y => `<option${y === pick.year ? " selected" : ""}>${y}</option>`).join("");
     document.getElementById("readout").textContent = FOG.readout(data, key, pick.year, pick.day);
     document.getElementById("when").textContent = FOG.when(data, key, pick.year);
@@ -202,17 +225,29 @@ async function main() {
     document.querySelectorAll(".tabs button").forEach(b => b.setAttribute("aria-pressed", b.dataset.stn === key));
     layout = draw(canvas, data, key, pick);
   };
-  const move = d => { const ys = years(), i = ys.indexOf(pick.year) + d; if (ys[i]) { pick.year = ys[i]; show(); } };
+  // every pick rewrites the address in place (no history entry per tap), so the URL bar is always this view
+  const picked = () => { show(); history.replaceState(null, "", FOG.link(data, key, pick.year, pick.day)); };
+  const move = d => { const ys = years(), i = ys.indexOf(pick.year) + d; if (ys[i]) { pick.year = ys[i]; picked(); } };
   document.getElementById("prev").addEventListener("click", () => move(-1));
   document.getElementById("next").addEventListener("click", () => move(1));
-  sel.addEventListener("change", () => { pick.year = Number(sel.value); show(); });
+  sel.addEventListener("change", () => { pick.year = Number(sel.value); picked(); });
   canvas.addEventListener("click", e => {
     const b = canvas.getBoundingClientRect(), h = layout && FOG.hit(layout, e.clientX - b.left, e.clientY - b.top);
     if (!h || !years().includes(layout.first + h.row)) return;
-    pick.year = layout.first + h.row; pick.day = h.day; show();
+    pick.year = layout.first + h.row; pick.day = h.day; picked();
   });
-  document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click", () => { key = b.dataset.stn; show(); }));
+  document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click", () => { key = b.dataset.stn; picked(); }));
+  // the share sheet on a phone, the clipboard elsewhere; if neither works the link just opens itself
+  share.addEventListener("click", async e => {
+    const url = share.href;
+    try {
+      if (navigator.share) { e.preventDefault(); await navigator.share({ title: document.title, text: document.getElementById("readout").textContent, url }); }
+      else if (navigator.clipboard) { e.preventDefault(); await navigator.clipboard.writeText(url); share.textContent = "Link copied"; }
+    } catch (_) { /* dismissed or refused: the href is still in the address bar */ }
+  });
+  addEventListener("hashchange", () => { open(); show(); });
   addEventListener("resize", show);
+  open();
   show();
 }
 
