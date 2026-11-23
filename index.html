@@ -43,6 +43,12 @@
   .pick button, .pick select { font:inherit; min-height:44px; padding:6px 12px; border:1px solid var(--line); background:transparent; color:var(--fg); border-radius:8px; }
   .pick button { min-width:44px; cursor:pointer; }
   .pick button:disabled { opacity:.4; cursor:default; }
+  .days { display:grid; grid-template-columns:repeat(7, 1fr); gap:3px; max-width:420px; margin:8px 0 10px; }
+  .days .wd { text-align:center; font-size:.75rem; color:var(--muted); }
+  .days button { font:inherit; font-size:.8rem; min-height:34px; padding:0; border:1px solid transparent; border-radius:4px; cursor:pointer; white-space:nowrap; }
+  .days button.none { background:transparent; color:var(--muted); border:1px dashed var(--line); }
+  .days button[aria-pressed="true"] { outline:2px solid var(--fg); outline-offset:1px; font-weight:700; }
+  .days button:focus-visible { outline:3px solid var(--accent); outline-offset:1px; }
   #readout { margin:0 0 4px; max-width:62ch; min-height:3em; }
   .share { margin:0 0 8px; font-size:.9rem; }
   .share a { display:inline-block; padding:10px 0; }
@@ -85,13 +91,14 @@
       <select id="year" aria-label="Summer"></select>
       <button type="button" id="next" aria-label="Later summer">&rsaquo;</button>
     </div>
+    <div class="days" id="days" role="group"></div>
     <p id="readout" aria-live="polite"></p>
     <p class="share"><a id="permalink" href="#sfo">Link to this summer</a></p>
     <div class="legend">clear <i id="ramp"></i> low cloud all day</div>
     <figcaption>One row per summer (June to August), one cell per day. A cell's shade is how many of the
       day's eight 3-hourly readings (2am to 11pm) had the cloud ceiling at or below <span class="lowm">400</span> m. The bar at the right is
       that summer's share of all readings, and the line across the bars is each decade's average. Blank cells are days with too few readings; a blank row is a summer with no record.
-      Tap a row, or pick a year, to read that summer and day.</figcaption>
+      Tap a row, or pick a year, to read that summer; tap a day in the calendar under the year to read that day.</figcaption>
     <h3>What time of day</h3>
     <p id="when" aria-live="polite"></p>
     <div class="hours" id="hours" role="list" aria-label="Share of readings with low cloud at each time of day, picked summer"></div>

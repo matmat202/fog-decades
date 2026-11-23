@@ -11,6 +11,7 @@ const FOG = {
     const b = dark ? [196, 204, 214] : [84, 94, 108];
     return `rgb(${a.map((c, i) => Math.round(c + (b[i] - c) * t)).join(",")})`;
   },
+  month(m) { return ["Jun", "Jul", "Aug"][m - 6]; },
   mean(xs) { return xs.reduce((s, x) => s + x, 0) / xs.length; },
   decade(stn, d) { return (stn.decades.find(x => x.decade === d) || {}).share; },
   // the sentence at the top: what changed, and when
@@ -45,7 +46,7 @@ const FOG = {
       `so this one was ${y.share < lo ? "clearer than usual" : y.share > hi ? "foggier than usual" : "typical"}.`;
     if (day != null && data.days[day]) {
       const [m, d] = data.days[day].split("-").map(Number);
-      const when = `${["Jun", "Jul", "Aug"][m - 6]} ${d}`, v = y.days[day];
+      const when = `${FOG.month(m)} ${d}`, v = y.days[day];
       s += v < 0 ? ` ${when} has too few readings to say.`
         : ` ${when}: low cloud in about ${v} of 8 readings.`;
     }
@@ -99,6 +100,22 @@ const FOG = {
     const day = m[3] ? data.days.indexOf(m[3]) : -1;
     return { key, year, day: day < 0 ? null : day };
   },
+  // one summer as a calendar, a week to a row from Sunday: the columns before Jun 1, then one cell a day.
+  // The grid's cells are 2-3 px wide on a phone, too small to tap a day; these are about 48.
+  calendar(data, year) {
+    const lead = new Date(Date.UTC(year, 5, 1)).getUTCDay();
+    return { lead, cells: data.days.map((md, i) => {
+      const [m, d] = md.split("-").map(Number);
+      return { i, d, m, name: `${FOG.month(m)} ${d}` };
+    }) };
+  },
+  // the text colour that reads best on a cell's shade: near-black or white, by contrast ratio
+  ink(rgb) {
+    const lum = c => { c /= 255; return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; };
+    const [r, g, b] = rgb.match(/\d+/g).map(Number), L = 0.2126 * lum(r) + 0.7152 * lum(g) + 0.0722 * lum(b);
+    // against #111 (L 0.0056) and #fff (L 1)
+    return (L + 0.05) / 0.0556 >= 1.05 / (L + 0.05) ? "#111" : "#fff";
+  },
   // which summer (row) and day (column) a point on the canvas falls on; day is null off the grid
   hit(L, x, y) {
     const r = Math.floor((y - L.top) / L.rh);
@@ -134,6 +151,21 @@ function hours(el, data, key, year) {
       (o == null ? "" : `<i class="old" style="bottom:${(100 * o / top).toFixed(1)}%"></i>`) +
       `</span><span class="t">${t}</span></div>`;
   }).join("");
+}
+
+// the picked summer's days as buttons, shaded like the grid; the picked day is pressed
+function days(el, data, key, pick) {
+  const y = data.stations[key].years.find(r => r.year === pick.year), dark = matchMedia("(prefers-color-scheme: dark)").matches;
+  const cal = FOG.calendar(data, pick.year);
+  el.setAttribute("aria-label", `Summer ${pick.year}, day by day`);
+  el.innerHTML = ["S", "M", "T", "W", "T", "F", "S"].map(w => `<span class="wd" aria-hidden="true">${w}</span>`).join("") +
+    cal.cells.map(c => {
+      const v = y.days[c.i], bg = FOG.shade(v, dark);
+      const style = (c.i === 0 ? `grid-column-start:${cal.lead + 1};` : "") + (bg ? `background:${bg};color:${FOG.ink(bg)};` : "");
+      const say = v < 0 ? "too few readings" : `low cloud in ${v} of 8 readings`;
+      return `<button type="button" class="day${bg ? "" : " none"}" data-day="${c.i}" aria-pressed="${pick.day === c.i}"` +
+        ` aria-label="${c.name}: ${say}" style="${style}">${c.d === 1 ? c.name : c.d}</button>`;
+    }).join("");
 }
 
 function draw(canvas, data, key, pick) {
@@ -217,6 +249,7 @@ async function main() {
     document.getElementById("when").textContent = FOG.when(data, key, pick.year);
     document.getElementById("then").textContent = FOG.then(data, key);
     hours(document.getElementById("hours"), data, key, pick.year);
+    days(document.getElementById("days"), data, key, pick);
     const i = years().indexOf(pick.year);
     document.getElementById("prev").disabled = i <= 0;
     document.getElementById("next").disabled = i >= years().length - 1;
@@ -236,6 +269,14 @@ async function main() {
     if (!h || !years().includes(layout.first + h.row)) return;
     pick.year = layout.first + h.row; pick.day = h.day; picked();
   });
+  document.getElementById("days").addEventListener("click", e => {
+    const b = e.target.closest("button[data-day]");
+    if (!b) return;
+    const i = Number(b.dataset.day);
+    pick.day = pick.day === i ? null : i; picked();
+    const again = document.querySelector(`#days [data-day="${i}"]`);
+    if (again) again.focus();
+  });
   document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click", () => { key = b.dataset.stn; picked(); }));
   // the share sheet on a phone, the clipboard elsewhere; if neither works the link just opens itself
   share.addEventListener("click", async e => {
@@ -252,4 +293,4 @@ async function main() {
 }
 
 if (typeof window !== "undefined") main();
-else module.exports = { FOG, stats, hours };
+else module.exports = { FOG, stats, hours, days };
