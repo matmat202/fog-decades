@@ -275,6 +275,12 @@ async function main() {
   };
   // every pick rewrites the address in place (no history entry per tap), so the URL bar is always this view
   const picked = () => { show(); history.replaceState(null, "", FOG.link(data, key, pick.year, pick.day)); };
+  // a tap's answer is the readout; on a phone it can sit a screen below the grid, so bring it into view
+  const reveal = () => {
+    const r = document.getElementById("readout"), q = r.getBoundingClientRect();
+    if (q.top < 0 || q.bottom > innerHeight)
+      r.scrollIntoView({ block: "nearest", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  };
   const move = d => { const ys = years(), i = ys.indexOf(pick.year) + d; if (ys[i]) { pick.year = ys[i]; picked(); } };
   document.getElementById("prev").addEventListener("click", () => move(-1));
   document.getElementById("next").addEventListener("click", () => move(1));
@@ -282,7 +288,7 @@ async function main() {
   canvas.addEventListener("click", e => {
     const b = canvas.getBoundingClientRect(), h = layout && FOG.hit(layout, e.clientX - b.left, e.clientY - b.top);
     if (!h || !years().includes(layout.first + h.row)) return;
-    pick.year = layout.first + h.row; pick.day = h.day; picked();
+    pick.year = layout.first + h.row; pick.day = h.day; picked(); reveal();
   });
   document.getElementById("days").addEventListener("click", e => {
     const b = e.target.closest("button[data-day]");
@@ -290,7 +296,8 @@ async function main() {
     const i = Number(b.dataset.day);
     pick.day = pick.day === i ? null : i; picked();
     const again = document.querySelector(`#days [data-day="${i}"]`);
-    if (again) again.focus();
+    if (again) again.focus({ preventScroll: true });
+    reveal();
   });
   document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click", () => { key = b.dataset.stn; picked(); }));
   // the share sheet on a phone, the clipboard elsewhere; if neither works the link just opens itself
