@@ -47,10 +47,25 @@ const FOG = {
     if (day != null && data.days[day]) {
       const [m, d] = data.days[day].split("-").map(Number);
       const when = `${FOG.month(m)} ${d}`, v = y.days[day];
-      s += v < 0 ? ` ${when} has too few readings to say.`
-        : ` ${when}: low cloud in about ${v} of 8 readings.`;
+      s += v < 0 ? ` ${when} has too few readings to say.` : ` ${when}: ${FOG.dayTimes(data, y, day)}.`;
     }
     return s;
+  },
+  // which of a day's readings had low cloud, by clock time: "low cloud at 5am and 8am, 2 of 8 readings".
+  // Three or more low readings in a row read as a span; a reading that is missing is said, not counted as clear.
+  dayTimes(data, y, day) {
+    const bits = (h, i) => (h == null ? 255 : parseInt(h.slice(2 * i, 2 * i + 2), 16));
+    const low = bits(y.low, day), seen = bits(y.seen, day), n = data.hours.length;
+    const lows = [], gaps = [];
+    for (let i = 0; i < n; i++) (seen >> i & 1 ? low >> i & 1 && lows.push(i) : gaps.push(data.hours[i]));
+    const read = n - gaps.length, and = xs => xs.length > 1 ? xs.slice(0, -1).join(", ") + " and " + xs[xs.length - 1] : xs[0];
+    const runs = [];
+    for (const i of lows) (runs.length && runs[runs.length - 1].at(-1) === i - 1 ? runs[runs.length - 1].push(i) : runs.push([i]));
+    const said = runs.flatMap(r => r.length >= 3 ? [`${data.hours[r[0]]}–${data.hours[r.at(-1)]}`] : r.map(i => data.hours[i]));
+    const s = !lows.length ? `no low cloud at any of its ${read} readings`
+      : lows.length === read ? `low cloud at all ${read} readings`
+      : `low cloud at ${and(said)}, ${lows.length} of ${read} readings`;
+    return s + (gaps.length ? ` (no ${and(gaps)} reading)` : "");
   },
   // each time of day's share of low readings, averaged over the summers from `from` to `to` (null where none read it)
   hourMeans(st, from, to = Infinity) {
@@ -162,7 +177,7 @@ function days(el, data, key, pick) {
     cal.cells.map(c => {
       const v = y.days[c.i], bg = FOG.shade(v, dark);
       const style = (c.i === 0 ? `grid-column-start:${cal.lead + 1};` : "") + (bg ? `background:${bg};color:${FOG.ink(bg)};` : "");
-      const say = v < 0 ? "too few readings" : `low cloud in ${v} of 8 readings`;
+      const say = v < 0 ? "too few readings" : FOG.dayTimes(data, y, c.i);
       return `<button type="button" class="day${bg ? "" : " none"}" data-day="${c.i}" aria-pressed="${pick.day === c.i}"` +
         ` aria-label="${c.name}: ${say}" style="${style}">${c.d === 1 ? c.name : c.d}</button>`;
     }).join("");
